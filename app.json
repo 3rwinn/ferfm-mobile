@@ -37,19 +37,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-av",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "gradleCommand": ":app:preBuild",
-            "extraMavenRepos": [],
-            "enableProguardInReleaseBuilds": false
-          },
-          "ios": {
-          }
-        }
-      ]
+      "expo-av"
     ],
     "extra": {
       "eas": {
