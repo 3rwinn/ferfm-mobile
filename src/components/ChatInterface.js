@@ -1,17 +1,17 @@
-import {
-  View,
-  Text,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Keyboard
-} from "react-native";
-import React, { useState, useRef, useEffect } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import aiApi from "../api/ai";
 
 const ChatInterface = ({ visible, onClose }) => {
@@ -227,7 +227,7 @@ const ChatInterface = ({ visible, onClose }) => {
                 source={require("../../../assets/eco-ia.png")}
                 style={chatStyles.chatHeaderIconImage}
               /> */}
-              <Text style={chatStyles.chatHeaderText}>Ferman</Text>
+              <Text style={chatStyles.chatHeaderText}>#FERMAN</Text>
             </View>
             <Pressable
               onPress={onClose}
@@ -237,7 +237,7 @@ const ChatInterface = ({ visible, onClose }) => {
               <MaterialCommunityIcons
                 name="close"
                 size={26}
-                color={typingMessageId !== null ? theme.colors.gray : "#000"}
+                color={typingMessageId !== null ? "#999" : "#000"}
               />
             </Pressable>
           </View>
@@ -310,9 +310,9 @@ const ChatInterface = ({ visible, onClose }) => {
                 {[
                   "Comment tu peux m'aider ?",
                   "Quels sont vos services ?",
-                  "Comment fonctionne l'application ?",
-                //   "Comment contacter le support ?",
-                //   "Comment faire un investissement ?",
+                  // "Comment fonctionne l'application ?",
+                  //   "Comment contacter le support ?",
+                  //   "Comment faire un investissement ?",
                 ].map((item, index) => (
                   <Pressable
                     key={index}

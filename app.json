@@ -16,8 +16,10 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
+          "audio",
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "ci.ferradio"
     },
@@ -36,9 +38,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-av"
-    ],
+    "plugins": [],
     "extra": {
       "eas": {
         "projectId": "3d8b4e9c-85f5-4a68-a4e4-aed49ead844b"

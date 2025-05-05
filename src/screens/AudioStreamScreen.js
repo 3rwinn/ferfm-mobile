@@ -1,28 +1,19 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Dimensions,
+  Easing,
+  FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
-  SafeAreaView,
-  Image,
-  Animated,
-  Easing,
-  FlatList,
-  Dimensions,
+  View,
 } from "react-native";
-import TrackPlayer, {
-  Capability,
-  Event,
-  RepeatMode,
-  State,
-  usePlaybackState,
-} from "react-native-track-player";
-import { Ionicons, Feather } from "@expo/vector-icons";
-import WaveformAnimation from "../components/WaveformAnimation";
-import { LinearGradient } from 'expo-linear-gradient';
+import { AudioPro, AudioProState, useAudioPro } from "react-native-audio-pro";
 import ChatInterface from "../components/ChatInterface";
+import WaveformAnimation from "../components/WaveformAnimation";
 
 // Placeholder - replace with your actual stream URL
 const STREAM_URL = "https://listen.radioking.com/radio/722114/stream/787982";
@@ -52,32 +43,21 @@ const newsData = [
 
 const { width: screenWidth } = Dimensions.get("window");
 
-const setupPlayer = async () => {
-  try {
-    await TrackPlayer.setupPlayer();
-    await TrackPlayer.updateOptions({
-      capabilities: [Capability.Play, Capability.Pause, Capability.Stop],
-      compactCapabilities: [Capability.Play, Capability.Pause, Capability.Stop],
-      // Icon for notification
-      // notificationIcon: require('../path/to/your/notification-icon.png'), // Add your icon path
-    });
-    await TrackPlayer.add({
-      url: STREAM_URL, // Your stream url
-      title: "FER FM",
-      artist: "La radio des routes et autoroutes",
-      artwork: require('../../assets/logo-fer.png'), // Add your artwork path
-      isLiveStream: true, // Important for live streams
-    });
-    // Set repeat mode if needed, often None for live streams
-    await TrackPlayer.setRepeatMode(RepeatMode.Off);
-  } catch (e) {
-    console.error("Error setting up player:", e);
-  }
+// Define the track object for AudioPro
+const streamTrack = {
+  id: "live-stream-001", // Unique ID for the track
+  url: STREAM_URL, // Your stream url
+  title: "FER FM",
+  artist: "La radio des routes et autoroutes",
+  artwork: require("../../assets/logo-fer.png"), // Use require for local assets
+  // Note: AudioPro doesn't have an explicit 'isLiveStream' flag like TrackPlayer,
+  // but it supports streaming URLs.
 };
 
 const AudioStreamScreen = () => {
-  const { state: playbackStateValue } = usePlaybackState();
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  // Use the AudioPro hook to get state
+  const { state: playbackStateValue, playingTrack } = useAudioPro();
+  const [isPlayerSetup, setIsPlayerSetup] = useState(false); // Keep track if initial setup is done
   const [textWidth, setTextWidth] = useState(null);
   const [containerWidth, setContainerWidth] = useState(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -93,20 +73,13 @@ const AudioStreamScreen = () => {
 
   const [showChat, setShowChat] = useState(false);
 
+  // Initial setup effect (optional, as config is in audioSetup.js)
   useEffect(() => {
-    let isMounted = true;
-    async function initializePlayer() {
-      await setupPlayer();
-      if (isMounted) {
-        setIsPlayerReady(true);
-      }
-    }
-    initializePlayer();
+    console.log("AudioStreamScreen mounted");
+    setIsPlayerSetup(true); // Assume setup is done via audioSetup.js
 
     return () => {
-      isMounted = false;
-      // Optional: Clean up player on unmount
-      // TrackPlayer.destroy();
+      console.log("AudioStreamScreen unmounted");
     };
   }, []);
 
@@ -128,7 +101,7 @@ const AudioStreamScreen = () => {
     animationRef.current = Animated.loop(
       Animated.timing(slideAnim, {
         toValue: -textWidth, // End position: off-screen left (previously right)
-        duration: (containerWidth + textWidth) * 15, // Speed remains the same
+        duration: (containerWidth + textWidth) * 25, // Increase multiplier to slow down (e.g., from 15 to 25)
         useNativeDriver: true,
         easing: Easing.linear, // Constant speed
       })
@@ -141,37 +114,37 @@ const AudioStreamScreen = () => {
     return () => {
       if (animationRef.current) {
         animationRef.current.stop();
-        // Optional: set ref to null if component unmounts fully
-        // animationRef.current = null;
       }
     };
   }, [slideAnim, textWidth, containerWidth]); // Rerun effect if widths change
 
   const togglePlayback = async () => {
-    if (!isPlayerReady) return;
+    const isPlaying = playbackStateValue === AudioProState.PLAYING;
+    const isLoading = playbackStateValue === AudioProState.LOADING;
 
-    const currentTrack = await TrackPlayer.getCurrentTrack();
-    if (currentTrack == null) {
-      // Handle case where track isn't loaded yet or setup failed
-      console.log("Track not ready or setup failed.");
-      await setupPlayer(); // Try to setup again
-      await TrackPlayer.play();
+    if (isLoading) {
+      console.log("Player is loading...");
+      return; // Don't do anything if loading
+    }
+
+    if (isPlaying) {
+      console.log("Pausing...");
+      await AudioPro.pause();
     } else {
-      if (
-        playbackStateValue === State.Paused ||
-        playbackStateValue === State.Ready ||
-        playbackStateValue === State.Stopped ||
-        playbackStateValue === State.None
-      ) {
-        await TrackPlayer.play();
+      console.log("Playing/Resuming...");
+      if (playingTrack?.id !== streamTrack.id) {
+        console.log("Loading and playing track...");
+        await AudioPro.play(streamTrack);
       } else {
-        await TrackPlayer.pause();
+        console.log("Resuming track...");
+        await AudioPro.resume(); // Use resume if already loaded
       }
     }
   };
 
-  // Determine if the player is currently playing
-  const isPlaying = playbackStateValue === State.Playing;
+  // Determine if the player is currently playing or loading
+  const isPlaying = playbackStateValue === AudioProState.PLAYING;
+  const isLoading = playbackStateValue === AudioProState.LOADING;
 
   // Function to scroll to the next slide
   const scrollToNext = useCallback(() => {
@@ -187,9 +160,6 @@ const AudioStreamScreen = () => {
       index: nextIndex,
       animated: true,
     });
-    // Note: setActiveNewsIndex will be updated by onViewableItemsChanged
-    // If onViewableItemsChanged proves unreliable with auto-scroll, uncomment below:
-    // setActiveNewsIndex(nextIndex);
   }, [activeNewsIndex]);
 
   // Effect for auto-scrolling
@@ -246,17 +216,9 @@ const AudioStreamScreen = () => {
     </View>
   );
 
+  // Define the play/pause button rendering logic here
   const renderPlayPauseButton = () => {
-    const isLoading =
-      !isPlayerReady ||
-      playbackStateValue === State.Buffering ||
-      playbackStateValue === State.Connecting;
-
     let iconName = isPlaying ? "pause" : "play";
-
-    // if (isLoading) {
-    //   return <ActivityIndicator size="large" color="#FFF" />;
-    // }
 
     return (
       <TouchableOpacity
@@ -307,88 +269,101 @@ const AudioStreamScreen = () => {
   };
 
   return (
-    <LinearGradient
-      colors={['#262354', '#000000']}
-      style={styles.gradientContainer}
-    >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logo}>
+    //<SafeAreaView style={{ flex: 1 }}>
+    <View style={styles.gradientContainer}>
+      <Image
+        source={require("../../assets/blur.png")}
+        style={styles.blurImage}
+      />
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.logo}>
+            <Image
+              source={require("../../assets/logo-fer.png")}
+              style={styles.logoImage}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.chatContainer}
+            onPress={() => setShowChat(true)}
+          >
+            <View>
+              <Text style={styles.fermanText}>#FERMAN</Text>
+              <Text style={styles.fermanTextTiny}>notre agent IA</Text>
+            </View>
+            <View>
               <Image
-                source={require("../../assets/logo-fer.png")}
-                style={styles.logoImage}
+                source={require("../../assets/chat-ai.png")}
+                style={{ width: 25, height: 25 }}
               />
             </View>
-            <TouchableOpacity style={styles.chatContainer} onPress={() => setShowChat(true)}>
-              <View>
-                <Text style={styles.fermanText}>Ferman</Text>
-                <Text style={styles.fermanTextTiny}>notre agent IA</Text>
-              </View>
-              <View>
-                <Image
-                  source={require("../../assets/chat-ai.png")}
-                  style={{ width: 25, height: 25 }}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* News Section - Carousel */}
-          <View style={styles.newsSectionContainer}>
-            <Text style={styles.breakingNewsLabel}>ACTU DE DERNIÈRE MINUTE</Text>
-            <FlatList
-              ref={flatListRef}
-              data={newsData}
-              renderItem={renderNewsItem}
-              keyExtractor={(item) => item.id}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
-              style={styles.newsCarousel}
-              onScrollBeginDrag={onScrollBeginDrag}
-              onScrollEndDrag={onScrollEndDrag}
-            />
-            {/* Pagination Dots */}
-            <View style={styles.paginationContainer}>
-              {newsData.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.paginationDot,
-                    index === activeNewsIndex ? styles.paginationDotActive : null,
-                  ]}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* Audio Visualization */}
-          <View style={styles.visualizationContainer}>
-            <WaveformAnimation isPlaying={isPlaying} />
-          </View>
-
-          {/* Player Controls */}
-          <View style={styles.playerContainer}>{renderPlayPauseButton()}</View>
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
+
+        <View style={styles.newsSectionContainer}>
+          <Text style={styles.breakingNewsLabel}>ACTU DE DERNIÈRE MINUTE</Text>
+          <FlatList
+            ref={flatListRef}
+            data={newsData}
+            renderItem={renderNewsItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            style={styles.newsCarousel}
+            onScrollBeginDrag={onScrollBeginDrag}
+            onScrollEndDrag={onScrollEndDrag}
+          />
+          <View style={styles.paginationContainer}>
+            {newsData.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  index === activeNewsIndex ? styles.paginationDotActive : null,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Audio Visualization */}
+        <View style={styles.visualizationContainer}>
+          <WaveformAnimation isPlaying={isPlaying} />
+        </View>
+
+        {/* Player Controls */}
+        <View style={styles.playerContainer}>{renderPlayPauseButton()}</View>
+      </View>
+
+      {/* Chat Interface Modal */}
       <ChatInterface visible={showChat} onClose={() => setShowChat(false)} />
-    </LinearGradient>
+    </View>
+    //</SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#004d40", // Dark teal background
+  },
   gradientContainer: {
     flex: 1,
   },
-  container: {
-    flex: 1,
+  blurImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
   },
   content: {
     flex: 1,
+    marginTop: 20,
     padding: 20,
   },
   header: {
@@ -397,7 +372,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
     marginBottom: 30,
-    // paddingHorizontal: 20,
   },
   logo: {
     flexDirection: "row",
@@ -422,6 +396,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "regular",
     fontSize: 10,
+  },
+  controlsContainer: {
+    alignItems: "center",
+    marginBottom: 30, // Add some space below controls
+  },
+  playButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)", // Semi-transparent white
+    borderRadius: 50, // Make it circular
+    padding: 20,
+    marginBottom: 20, // Space between button and waveform
   },
   newsSectionContainer: {
     marginTop: 60,
@@ -475,11 +459,11 @@ const styles = StyleSheet.create({
   stationName: {
     color: "#333",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 18,
   },
   frequency: {
     color: "#333",
-    fontSize: 14,
+    fontSize: 16,
   },
   stationTagline: {
     color: "#333",
@@ -487,9 +471,9 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20, // Half of width/height
+    width: 60,
+    height: 60,
+    borderRadius: 50, // Half of width/height
     backgroundColor: "#FFF",
     justifyContent: "center",
     alignItems: "center",
