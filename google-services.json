@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1016925455941",
+    "project_id": "fer-fm",
+    "storage_bucket": "fer-fm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016925455941:android:60b8a8011ff4118c80052c",
+        "android_client_info": {
+          "package_name": "ci.ferradio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClBjbMZwDJIGasEt54kfmLv14xswAi-pE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

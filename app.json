@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "radiofer",
+    "name": "FER FM",
     "slug": "radiofer",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,18 +8,18 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFD508"
     },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio",
-          "audio"
-        ],
-        "ITSAppUsesNonExemptEncryption": false
+        "UIBackgroundModes": ["audio", "audio"],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       },
       "bundleIdentifier": "ci.ferradio"
     },
@@ -33,12 +33,19 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "ci.ferradio"
+      "package": "ci.ferradio",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-build-properties",
+        { "android": { "usesCleartextTraffic": true } }
+      ],
+      "expo-build-properties"
+    ],
     "extra": {
       "eas": {
         "projectId": "3d8b4e9c-85f5-4a68-a4e4-aed49ead844b"
@@ -47,3 +54,4 @@
     "owner": "isma3l"
   }
 }
+ 

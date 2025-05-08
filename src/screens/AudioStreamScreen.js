@@ -10,36 +10,20 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
+  RefreshControl,
+  Platform,
 } from "react-native";
 import { AudioPro, AudioProState, useAudioPro } from "react-native-audio-pro";
 import ChatInterface from "../components/ChatInterface";
-import WaveformAnimation from "../components/WaveformAnimation";
+// import WaveformAnimation from "../components/WaveformAnimation";
+import WaveAnimation from "../components/WaveAnimation";
+import actuApi from "../api/actu";
 
 // Placeholder - replace with your actual stream URL
 const STREAM_URL = "https://listen.radioking.com/radio/722114/stream/787982";
 
 // Sample News Data (Replace with actual data source if needed)
-const newsData = [
-  {
-    id: "1",
-    headline:
-      "Contrôle des poids à Tiébissou en cours pour assurer la conformité aux normes UEMOA",
-  },
-  {
-    id: "2",
-    headline: "Nouveau radar installé sur l'autoroute du Nord PK 105",
-  },
-  {
-    id: "3",
-    headline:
-      "Travaux de maintenance prévus ce week-end près de l'échangeur de Singrobo",
-  },
-  {
-    id: "4",
-    headline:
-      "Conseils de sécurité pour les longs trajets pendant les vacances",
-  },
-];
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -212,7 +196,8 @@ const AudioStreamScreen = () => {
   // Function to render each news slide
   const renderNewsItem = ({ item }) => (
     <View style={styles.newsSlide}>
-      <Text style={styles.newsHeadline}>{item.headline}</Text>
+      {/* <Text style={styles.newsHeadline}>{item.headline}</Text> */}
+      <Text style={styles.newsHeadline}>{item.text}</Text>
     </View>
   );
 
@@ -268,90 +253,145 @@ const AudioStreamScreen = () => {
     );
   };
 
+  // Load actual news
+  const [newsData, setNewsData] = useState([]);
+
+  const loadActus = async () => {
+    const actu = await actuApi.loadActus();
+    setNewsData(actu.results);
+  };
+
+  useEffect(() => {
+    loadActus();
+  }, []);
+
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadActus();
+    setRefreshing(false);
+  };
+
   return (
-    //<SafeAreaView style={{ flex: 1 }}>
-    <View style={styles.gradientContainer}>
-      <Image
-        source={require("../../assets/blur.png")}
-        style={styles.blurImage}
-      />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.logo}>
-            <Image
-              source={require("../../assets/logo-fer.png")}
-              style={styles.logoImage}
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={[styles.gradientContainer]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <Image
+          source={require("../../assets/blur.png")}
+          style={styles.blurImage}
+        />
+
+        <View style={{ marginBottom: 0 }}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.logo}>
+              <Image
+                source={require("../../assets/logo-fer.png")}
+                style={styles.logoImage}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.chatContainer}
+              onPress={() => setShowChat(true)}
+            >
+              <View>
+                <Text style={styles.fermanText}>#FERMAN</Text>
+                <Text style={styles.fermanTextTiny}>Discutez avec l'IA</Text>
+              </View>
+              <View
+                style={{
+                  backgroundColor: "#FEDA2B",
+                  borderRadius: 50,
+                  height: 40,
+                  width: 40,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  shadowColor: "#ECCB44",
+                  shadowOffset: {
+                    width: 0,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                }}
+              >
+                <Image
+                  source={require("../../assets/chat-ai-primary.png")}
+                  style={{ width: 25, height: 25 }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {newsData.length > 0 && (
+            <View style={styles.newsSectionContainer}>
+              <Text style={styles.breakingNewsLabel}>
+                ACTU DE DERNIÈRE MINUTE
+              </Text>
+              <FlatList
+                ref={flatListRef}
+                data={newsData}
+                renderItem={renderNewsItem}
+                keyExtractor={(item) => item.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                style={styles.newsCarousel}
+                onScrollBeginDrag={onScrollBeginDrag}
+                onScrollEndDrag={onScrollEndDrag}
+              />
+              <View style={styles.paginationContainer}>
+                {newsData.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.paginationDot,
+                      index === activeNewsIndex
+                        ? styles.paginationDotActive
+                        : null,
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View>
+          {/* Audio Visualization */}
+          <View style={styles.visualizationContainer}>
+            {/* <WaveformAnimation isPlaying={isPlaying} /> */}
+            <WaveAnimation
+              isPlaying={isPlaying}
+              style={{ height: 220, width: "100%" }}
             />
           </View>
-          <TouchableOpacity
-            style={styles.chatContainer}
-            onPress={() => setShowChat(true)}
-          >
-            <View>
-              <Text style={styles.fermanText}>#FERMAN</Text>
-              <Text style={styles.fermanTextTiny}>notre agent IA</Text>
-            </View>
-            <View>
-              <Image
-                source={require("../../assets/chat-ai.png")}
-                style={{ width: 25, height: 25 }}
-              />
-            </View>
-          </TouchableOpacity>
         </View>
 
-        <View style={styles.newsSectionContainer}>
-          <Text style={styles.breakingNewsLabel}>ACTU DE DERNIÈRE MINUTE</Text>
-          <FlatList
-            ref={flatListRef}
-            data={newsData}
-            renderItem={renderNewsItem}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            style={styles.newsCarousel}
-            onScrollBeginDrag={onScrollBeginDrag}
-            onScrollEndDrag={onScrollEndDrag}
-          />
-          <View style={styles.paginationContainer}>
-            {newsData.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  index === activeNewsIndex ? styles.paginationDotActive : null,
-                ]}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Audio Visualization */}
-        <View style={styles.visualizationContainer}>
-          <WaveformAnimation isPlaying={isPlaying} />
-        </View>
-
-        {/* Player Controls */}
+        {/* Chat Interface Modal */}
+        <ChatInterface visible={showChat} onClose={() => setShowChat(false)} />
+      </ScrollView>
+      {/* Player Controls */}
+      <View style={{ position: "absolute", bottom: 80, left: 0, right: 0 }}>
         <View style={styles.playerContainer}>{renderPlayPauseButton()}</View>
       </View>
-
-      {/* Chat Interface Modal */}
-      <ChatInterface visible={showChat} onClose={() => setShowChat(false)} />
     </View>
-    //</SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#004d40", // Dark teal background
-  },
   gradientContainer: {
-    flex: 1,
+    // flex: 1,
+    // backgroundColor: "yellow",
   },
   blurImage: {
     position: "absolute",
@@ -362,16 +402,18 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   content: {
-    flex: 1,
-    marginTop: 20,
-    padding: 20,
+    // flex: 1,
+    // paddingTop: Platform.OS === "android" ? 40 : 0,
+    // paddingHorizontal: 20,
+    // backgroundColor: "red",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: Platform.OS === "android" ? 50 : 10,
     marginBottom: 30,
+    paddingHorizontal: 20,
   },
   logo: {
     flexDirection: "row",
@@ -408,8 +450,9 @@ const styles = StyleSheet.create({
     marginBottom: 20, // Space between button and waveform
   },
   newsSectionContainer: {
-    marginTop: 60,
-    marginBottom: 20,
+    marginTop: 30,
+    paddingHorizontal: 20,
+    maxHeight: 250,
   },
   breakingNewsLabel: {
     color: "#FF3B30",
@@ -430,7 +473,6 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   visualizationContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginVertical: 10,
@@ -440,7 +482,7 @@ const styles = StyleSheet.create({
     height: 120,
   },
   playerContainer: {
-    marginBottom: 40,
+    paddingHorizontal: 20,
   },
   playButton: {
     backgroundColor: "#FEDA2B",
@@ -489,10 +531,12 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#FFFFFF80", // Semi-transparent white
+    // backgroundColor: "#FEDA2B",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: "#FFFFFF", // Solid white
+    // backgroundColor: "#FFFFFF", // Solid white
+    backgroundColor: "#FEDA2B",
   },
 });
 

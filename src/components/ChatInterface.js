@@ -18,7 +18,7 @@ const ChatInterface = ({ visible, onClose }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Bonjour je suis Ferman, votre assistant virtuel! Comment puis-je vous aider aujourd'hui?",
+      text: "Bonjour je suis #FERMAN, votre assistant virtuel! Comment puis-je vous aider aujourd'hui?",
       sender: "bot",
     },
   ]);
