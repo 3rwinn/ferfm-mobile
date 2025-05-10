@@ -19,6 +19,12 @@ import ChatInterface from "../components/ChatInterface";
 // import WaveformAnimation from "../components/WaveformAnimation";
 import WaveAnimation from "../components/WaveAnimation";
 import actuApi from "../api/actu";
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.locale('fr');
+dayjs.extend(relativeTime);
 
 // Placeholder - replace with your actual stream URL
 const STREAM_URL = "https://listen.radioking.com/radio/722114/stream/787982";
@@ -198,6 +204,9 @@ const AudioStreamScreen = () => {
     <View style={styles.newsSlide}>
       {/* <Text style={styles.newsHeadline}>{item.headline}</Text> */}
       <Text style={styles.newsHeadline}>{item.text}</Text>
+      <Text style={styles.newsTimestamp}>
+        {dayjs(item.created_at).fromNow()}
+      </Text>
     </View>
   );
 
@@ -372,8 +381,8 @@ const AudioStreamScreen = () => {
             {/* <WaveformAnimation isPlaying={isPlaying} /> */}
             <WaveAnimation
               isPlaying={isPlaying}
-              style={{ height: 220, width: "100%" }}
-            />
+              style={{ height: 200, width: "90%" }}
+    à        />
           </View>
         </View>
 
@@ -537,6 +546,11 @@ const styles = StyleSheet.create({
   paginationDotActive: {
     // backgroundColor: "#FFFFFF", // Solid white
     backgroundColor: "#FEDA2B",
+  },
+  newsTimestamp: {
+    color: "white",
+    fontSize: 12,
+    opacity: 0.8,
   },
 });
 

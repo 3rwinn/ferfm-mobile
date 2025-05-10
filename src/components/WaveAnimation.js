@@ -3,7 +3,7 @@ import LottieView from "lottie-react-native";
 import { StyleSheet } from "react-native";
 
 const WaveAnimation = ({
-  source = require("../../assets/animations/wave.json"), // Expects require('../path/to/animation.json')
+  source = require("../../assets/animations/waveNew.json"), // Expects require('../path/to/animation.json')
   isPlaying = true,
   loop = true,
   style,
