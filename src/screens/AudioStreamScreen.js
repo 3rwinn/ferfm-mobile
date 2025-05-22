@@ -19,11 +19,11 @@ import ChatInterface from "../components/ChatInterface";
 // import WaveformAnimation from "../components/WaveformAnimation";
 import WaveAnimation from "../components/WaveAnimation";
 import actuApi from "../api/actu";
-import dayjs from 'dayjs';
-import 'dayjs/locale/fr';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import dayjs from "dayjs";
+import "dayjs/locale/fr";
+import relativeTime from "dayjs/plugin/relativeTime";
 
-dayjs.locale('fr');
+dayjs.locale("fr");
 dayjs.extend(relativeTime);
 
 // Placeholder - replace with your actual stream URL
@@ -204,9 +204,11 @@ const AudioStreamScreen = () => {
     <View style={styles.newsSlide}>
       {/* <Text style={styles.newsHeadline}>{item.headline}</Text> */}
       <Text style={styles.newsHeadline}>{item.text}</Text>
-      <Text style={styles.newsTimestamp}>
-        {dayjs(item.created_at).fromNow()}
-      </Text>
+      {item.created_at && (
+        <Text style={styles.newsTimestamp}>
+          {dayjs(item.created_at).fromNow()}
+        </Text>
+      )}
     </View>
   );
 
@@ -267,7 +269,17 @@ const AudioStreamScreen = () => {
 
   const loadActus = async () => {
     const actu = await actuApi.loadActus();
-    setNewsData(actu.results);
+    if (actu.results.length > 0) {
+      setNewsData(actu.results);
+    } else {
+      setNewsData([
+        {
+          id: 1,
+          text: "Aucune actualité pour le moment.",
+          created_at: null,
+        },
+      ]);
+    }
   };
 
   useEffect(() => {
@@ -296,7 +308,7 @@ const AudioStreamScreen = () => {
           style={styles.blurImage}
         />
 
-        <View style={{ marginBottom: 0 }}>
+        <View style={{ marginBottom: 0, backgroundColor: "transparent" }}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logo}>
@@ -339,58 +351,64 @@ const AudioStreamScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {newsData.length > 0 && (
-            <View style={styles.newsSectionContainer}>
-              <Text style={styles.breakingNewsLabel}>
-                ACTU DE DERNIÈRE MINUTE
-              </Text>
-              <FlatList
-                ref={flatListRef}
-                data={newsData}
-                renderItem={renderNewsItem}
-                keyExtractor={(item) => item.id}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                style={styles.newsCarousel}
-                onScrollBeginDrag={onScrollBeginDrag}
-                onScrollEndDrag={onScrollEndDrag}
-              />
-              <View style={styles.paginationContainer}>
-                {newsData.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.paginationDot,
-                      index === activeNewsIndex
-                        ? styles.paginationDotActive
-                        : null,
-                    ]}
-                  />
-                ))}
-              </View>
+          {/* {newsData.length > 0 && ( */}
+          <View style={styles.newsSectionContainer}>
+            <Text style={styles.breakingNewsLabel}>
+              ACTU DE DERNIÈRE MINUTE
+            </Text>
+            <FlatList
+              ref={flatListRef}
+              data={newsData}
+              renderItem={renderNewsItem}
+              keyExtractor={(item) => item.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              style={styles.newsCarousel}
+              onScrollBeginDrag={onScrollBeginDrag}
+              onScrollEndDrag={onScrollEndDrag}
+            />
+            <View style={styles.paginationContainer}>
+              {newsData.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    index === activeNewsIndex
+                      ? styles.paginationDotActive
+                      : null,
+                  ]}
+                />
+              ))}
             </View>
-          )}
-        </View>
-
-        <View>
-          {/* Audio Visualization */}
-          <View style={styles.visualizationContainer}>
-            {/* <WaveformAnimation isPlaying={isPlaying} /> */}
-            <WaveAnimation
-              isPlaying={isPlaying}
-              style={{ height: 200, width: "90%" }}
-    à        />
           </View>
+          {/* )} */}
         </View>
 
         {/* Chat Interface Modal */}
         <ChatInterface visible={showChat} onClose={() => setShowChat(false)} />
       </ScrollView>
       {/* Player Controls */}
-      <View style={{ position: "absolute", bottom: 80, left: 0, right: 0 }}>
+      <View
+        style={{
+          position: "absolute",
+          bottom: 80,
+          left: 0,
+          right: 0,
+        }}
+      >
+        <View style={{ backgroundColor: "transparent" }}>
+          {/* Audio Visualization */}
+          <View style={styles.visualizationContainer}>
+            {/* <WaveformAnimation isPlaying={isPlaying} /> */}
+            <WaveAnimation
+              isPlaying={isPlaying}
+              style={{ height: 200, width: "90%" }}
+            />
+          </View>
+        </View>
         <View style={styles.playerContainer}>{renderPlayPauseButton()}</View>
       </View>
     </View>
@@ -461,7 +479,7 @@ const styles = StyleSheet.create({
   newsSectionContainer: {
     marginTop: 30,
     paddingHorizontal: 20,
-    maxHeight: 250,
+    // maxHeight: 250,
   },
   breakingNewsLabel: {
     color: "#FF3B30",
@@ -477,9 +495,9 @@ const styles = StyleSheet.create({
   },
   newsHeadline: {
     color: "white",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    lineHeight: 32,
+    lineHeight: 26,
   },
   visualizationContainer: {
     justifyContent: "center",
@@ -551,6 +569,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     opacity: 0.8,
+    marginTop: 10,
   },
 });
 
