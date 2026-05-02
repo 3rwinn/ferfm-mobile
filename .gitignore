@@ -2,6 +2,8 @@
 
 # dependencies
 node_modules/
+android-old/
+android/
 
 # Expo
 .expo/
